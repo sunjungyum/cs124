@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <iomanip>
 
 using namespace std;
 
@@ -25,49 +26,57 @@ int iterativeFib(int n)
    return arr[n];
 }
 
-// void multiply(int n)
+// void multiply(int[] base)
 // {
-//    int temp[2][2] = {{0, 1}, {1, 1}};
-//    int result[2][2];
+//    int multiplier[2][2] = {{0, 1}, {1, 1}};
+
 //    for (int j = 0; j < 2; j++)
 //    {
 //       for (int k = 0; k < 2; k++)
 //       {
-//          for (int l = 0; l < 2; l++)
+//          base for (int l = 0; l < 2; l++)
 //          {
-//             result[j][k] += temp[j][l] * base[l][k];
+//             base[j][k] += temp[j][l] * base[l][k];
 //          }
 //       }
 //    }
 // }
 
-int matrixFib(int n)
-{
-   int base[2][2] = {{0, 1}, {1, 1}};
-   int first[2][1] = {{0}, {1}};
+// int matrixFib(int n)
+// {
+//    int base[2][2] = {{0, 1}, {1, 1}};
+//    int first[2][1] = {{0}, {1}};
 
-   // multiply(n);
+//    for (int i = 0; i < n; i++)
+//    {
+//       multiply(base);
+//    }
 
-   return 0;
-}
+//    return 0;
+// }
 
 int main()
 {
-   int num;
-   cout << "Enter a number: ";
-   cin >> num;
-   auto start = chrono::high_resolution_clock::now();
-   cout << "Recursive result: " << (recursiveFib(num) % 65536) << "\n";
-   auto end = chrono::high_resolution_clock::now();
-   auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-   std::cout << "The recursive method executed in " << duration << " nanoseconds. \n";
+   cout << setw(3) << "n" << setw(13) << "Recursive" << setw(20) << "Recurs. Time (ns)" << setw(13) << "Iterative" << setw(20) << "Iter. Time (ns)" << setw(10) << "Matrix" << setw(20) << "Matr. Time (ns)" << endl
+        << endl;
+   for (int i = 1; i <= 10; i++)
+   {
+      int num = 5 * i;
+      auto start = chrono::high_resolution_clock::now();
+      int recurs = recursiveFib(num) % 65536;
+      auto end = chrono::high_resolution_clock::now();
+      auto duration1 = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
-   start = chrono::high_resolution_clock::now();
-   cout << "Iterative result: " << (iterativeFib(num) % 65536) << "\n";
-   end = chrono::high_resolution_clock::now();
-   duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-   std::cout << "The iterative method executed in " << duration << " nanoseconds. \n";
+      start = chrono::high_resolution_clock::now();
+      int iter = iterativeFib(num) % 65536;
+      end = chrono::high_resolution_clock::now();
+      auto duration2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
-   // cout << "Iterative result: " << (iterativeFib(num) % 65536);
-   // cout << "Matrix result: " << (matrixFib(num) & 65536);
+      cout << setw(3) << num << setw(13) << recurs << setw(20) << duration1 << setw(13) << iter << setw(20) << duration2 << setw(10) << "hi" << setw(20) << "0" << endl;
+      // start = chrono::high_resolution_clock::now();
+      // cout << "Matrix result: " << (iterativeFib(num) % 65536) << "\n";
+      // end = chrono::high_resolution_clock::now();
+      // duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+      // std::cout << "The iterative method executed in " << duration << " nanoseconds. \n";
+   }
 }
