@@ -9,74 +9,100 @@ int recursiveFib(int n)
    if (n <= 1)
       return n;
    else
-      return recursiveFib(n - 1) + recursiveFib(n - 2);
+      return (recursiveFib(n - 1) + recursiveFib(n - 2)) % 65536;
 }
 
 int iterativeFib(int n)
 {
-   int arr[n + 1];
+   int *arr = (int *)malloc((n + 1) * sizeof(int));
    arr[0] = 0;
    arr[1] = 1;
 
    for (int i = 2; i <= n; i++)
    {
-      arr[i] = arr[i - 1] + arr[i - 2];
+      arr[i] = (arr[i - 1] + arr[i - 2]) % 65536;
    }
 
-   return arr[n];
+   int ans = arr[n];
+   free(arr);
+
+   return ans;
 }
 
-// void multiply(int[] base)
-// {
-//    int multiplier[2][2] = {{0, 1}, {1, 1}};
+int *multiply(int base[4], int multiplier[4])
+{
+   int *product;
+   product[0] = ((base[0] * multiplier[0]) + (base[1] * multiplier[2])) % 65536;
+   product[1] = ((base[0] * multiplier[1]) + (base[1] * multiplier[3])) % 65536;
+   product[2] = ((base[2] * multiplier[0]) + (base[3] * multiplier[2])) % 65536;
+   product[3] = ((base[2] * multiplier[1]) + (base[3] * multiplier[3])) % 65536;
+   return product;
+}
 
-//    for (int j = 0; j < 2; j++)
-//    {
-//       for (int k = 0; k < 2; k++)
-//       {
-//          base for (int l = 0; l < 2; l++)
-//          {
-//             base[j][k] += temp[j][l] * base[l][k];
-//          }
-//       }
-//    }
-// }
+int *exponent(int base[], int n)
+{
+   if (n == 1)
+   {
+      return base;
+   }
+   int *next;
 
-// int matrixFib(int n)
-// {
-//    int base[2][2] = {{0, 1}, {1, 1}};
-//    int first[2][1] = {{0}, {1}};
+   next = exponent(base, n / 2);
 
-//    for (int i = 0; i < n; i++)
-//    {
-//       multiply(base);
-//    }
+   if (n % 2 == 1)
+   {
+      return multiply(multiply(next, next), base);
+   }
+   else
+   {
+      return multiply(next, next);
+   }
+}
 
-//    return 0;
-// }
+int matrixFib(int n)
+{
+   int base[4] = {0, 1, 1, 1};
+   int *result;
+   result = exponent(base, n);
+   int answer = result[1];
+   return answer;
+}
 
 int main()
 {
-   cout << setw(3) << "n" << setw(13) << "Recursive" << setw(20) << "Recurs. Time (ns)" << setw(13) << "Iterative" << setw(20) << "Iter. Time (ns)" << setw(10) << "Matrix" << setw(20) << "Matr. Time (ns)" << endl
-        << endl;
-   for (int i = 1; i <= 10; i++)
+   int num = 100000;
+   auto start = chrono::high_resolution_clock::now();
+   cout << "F(" << num << ") = " << matrixFib(num) << "\n";
+   auto end = chrono::high_resolution_clock::now();
+   while (std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() < 10000000)
    {
-      int num = 5 * i;
-      auto start = chrono::high_resolution_clock::now();
-      int recurs = recursiveFib(num) % 65536;
-      auto end = chrono::high_resolution_clock::now();
-      auto duration1 = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-
+      num += 10000;
       start = chrono::high_resolution_clock::now();
-      int iter = iterativeFib(num) % 65536;
+      cout << "F(" << num << ") = " << matrixFib(num) << "\n";
       end = chrono::high_resolution_clock::now();
-      auto duration2 = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-
-      cout << setw(3) << num << setw(13) << recurs << setw(20) << duration1 << setw(13) << iter << setw(20) << duration2 << setw(10) << "hi" << setw(20) << "0" << endl;
-      // start = chrono::high_resolution_clock::now();
-      // cout << "Matrix result: " << (iterativeFib(num) % 65536) << "\n";
-      // end = chrono::high_resolution_clock::now();
-      // duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-      // std::cout << "The iterative method executed in " << duration << " nanoseconds. \n";
+      cout << "Time: " << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
    }
+
+   // cout << setw(3) << "n" << setw(13) << "Recursive" << setw(20) << "Recurs. Time (ms)" << setw(13) << "Iterative" << setw(20) << "Iter. Time (ms)" << setw(13) << "Matrix" << setw(20) << "Matr. Time (ms)" << endl
+   //      << endl;
+   // for (int i = 1; i <= 10; i++)
+   // {
+   //    int num = 5 * i;
+   //    auto start = chrono::high_resolution_clock::now();
+   //    int recurs = recursiveFib(num);
+   //    auto end = chrono::high_resolution_clock::now();
+   //    auto duration1 = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+   //    start = chrono::high_resolution_clock::now();
+   //    int iter = iterativeFib(num);
+   //    end = chrono::high_resolution_clock::now();
+   //    auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+   //    start = chrono::high_resolution_clock::now();
+   //    int matrix = matrixFib(num);
+   //    end = chrono::high_resolution_clock::now();
+   //    auto duration3 = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+   //    cout << setw(3) << num << setw(13) << recurs << setw(20) << duration1 << setw(13) << iter << setw(20) << duration2 << setw(13) << matrix << setw(20) << duration3 << endl;
+   // }
 }
