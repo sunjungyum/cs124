@@ -3,10 +3,19 @@ import sys
 import math
 import time
 
-random.seed(32)
+# from tqdm import tqdm
 
+random.seed(0)
+
+# placeholder for now
+best_crossover_point = 60
+
+# placeholder for size of matrix for trianglization
+const = 1024
 
 # creating and writing the test matrices to a file
+
+
 def createRandomMatrices(n):
     max = 4
     matrix1 = []
@@ -47,24 +56,26 @@ def read(fName):
     for i in range(n):
         bruh = []
         for j in range(n):
-            bruh.append(int(lines[i * j + j]))
+            bruh.append(int(lines[i * n + j]))
         A.append(bruh)
 
-    const = n*n
+    m = n*n
     for i in range(n):
         bruh = []
         for j in range(n):
-            bruh.append(int(lines[i * j + j + const]))
+            bruh.append(int(lines[i * n + j + m]))
         B.append(bruh)
 
     return A, B
 
 
-def printDiagonals(matrix):
+def findDiagonals(matrix):
+    diagonals = []
     for i in range(len(matrix)):
         for j in range(len(matrix[i])):
             if i == j:
-                print("(" + i + ", " + j + "): " + {matrix[i][j]})
+                diagonals.append(matrix[i][j])
+    return diagonals
 
 
 # regular matrix multiplication
@@ -75,7 +86,7 @@ def standardProduct(A, B):
         for j in range(n):
             for k in range(n):
                 C[i][j] += A[i][k] * B[k][j]
-    printDiagonals(C)
+    return C
 
 
 # addition and subtraction functions for strassen
@@ -117,22 +128,38 @@ def splitMatrix(A):
 
     return tl, tr, bl, br
 
+# pads matrix A and B with a row and col of 0s, returning modified versions
 
-def strassen(A1, B1):
-    if len(A1) == 2 and len(A1[0]) == 2:
-        return standardProduct(A1, B1)
 
-    A, B, C, D = splitMatrix(A1)
-    E, F, G, H = splitMatrix(B1)
-    print(A)
+def pad(A, B):
+    row0 = [0 for i in range(0, len(A) + 1)]
+    for i in range(len(A)):
+        A[i].append(0)
+        B[i].append(0)
+    A.append(row0)
+    B.append(row0)
 
-    p1 = strassen(A, subtract(F, H))
-    p2 = strassen(add(A, B), H)
-    p3 = strassen(add(C, D), E)
-    p4 = strassen(D, subtract(G, E))
-    p5 = strassen(add(A, D), add(E, H))
-    p6 = strassen(subtract(B, D), add(G, H))
-    p7 = strassen(subtract(A, C), add(E, F))
+
+def strassen(A, B, cross):
+    if len(A) <= cross and len(A[0]) <= cross:
+        return standardProduct(A, B)
+
+    # pads the matrix with 0s if odd
+    odd = False
+    if len(A) % 2 != 0 or len(A[0]) % 2 != 0:
+        odd = True
+        pad(A, B)
+
+    a1, a2, a3, a4 = splitMatrix(A)
+    b1, b2, b3, b4 = splitMatrix(B)
+
+    p1 = strassen(a1, subtract(b2, b4), cross)
+    p2 = strassen(add(a1, a2), b4, cross)
+    p3 = strassen(add(a3, a4), b1, cross)
+    p4 = strassen(a4, subtract(b3, b1), cross)
+    p5 = strassen(add(a1, a4), add(b1, b4), cross)
+    p6 = strassen(subtract(a2, a4), add(b3, b4), cross)
+    p7 = strassen(subtract(a1, a3), add(b1, b2), cross)
 
     tl = add(subtract(add(p5, p4), p2), p6)
     tr = add(p1, p2)
@@ -141,24 +168,78 @@ def strassen(A1, B1):
 
     # construct the new matrix from our 4 quadrants
     new_matrix = []
-    for i in range(len(top_right)):
-        new_matrix.append(top_left[i] + top_right[i])
-    for i in range(len(bot_right)):
-        new_matrix.append(bot_left[i] + bot_right[i])
+    for i in range(len(tr)):
+        new_matrix.append(tl[i] + tr[i])
+    for i in range(len(br)):
+        new_matrix.append(bl[i] + br[i])
+
+    # pop off 0s if necessary (maybe combining this w/ above will be more efficient)
+    if odd == True:
+        for i in range(len(new_matrix)):
+            A[i].pop()
+            B[i].pop()
+            new_matrix[i].pop()
+        new_matrix.pop()
+        A.pop()
+        B.pop()
+
     return new_matrix
+
+# task number 3
+
+
+def createAdjMatrix(p):
+    # const is defined at top of file, final value to be 1024
+    half_const = int(const / 2)
+    AdjMatrix = [[0 for j in range(const)] for i in range(const)]
+    for i in range(const):
+        for j in range(half_const):
+            # doesn't count a path from a node to itself
+            if i != j:
+                if random.randint(1, 101) <= p:
+                    AdjMatrix[i][j] = AdjMatrix[j][i] = 1
+
+    return AdjMatrix
+
+
+def findTriangles(A):
+    # can use strassen too if it's faster, using the global variable
+    # "best_crossover_point" as the cross parameter
+    B = standardProduct(A, A)
+    B = standardProduct(B, A)
+    diagonals = findDiagonals(B)
+    sum = 0
+    triangles = 0
+    for diagonal in diagonals:
+        sum += diagonal
+
+    triangles = sum / 6
+
+    return int(triangles)
 
 
 if __name__ == "__main__":
 
+    # standard crossing point for strassen
+    cross = 60
     n = 0
+    optimize = False
+    trials = 1
+    ft = False
+    p = 5
 
     if len(sys.argv) != 3 and len(sys.argv) != 4:
         print("Proper usage: python strassen.py {0} {dimension} {input file}")
         sys.exit()
 
     for i, arg in enumerate(sys.argv):
-        if i == 0:
-            print("first argument has not been altered to do anything")
+        if i == 1:
+            # if it's 0, don't optimize
+            if int(arg) > 0:
+                optimize = True
+                trials = int(arg)
+            elif int(arg) == 0:
+                ft = True
         if i == 2:
             n = int(arg)
 
@@ -167,14 +248,44 @@ if __name__ == "__main__":
             writeMatrix(A, B, str(arg)+"d.in")
         if i == 3:
             A, B = read(arg)
-            print("read")
             start = int(round(time.time() * 100000))
-            standardProduct(A, B)
+            C = standardProduct(A, B)
             end = int(round(time.time() * 100000))
+            std = end - start
+            for diagonal in findDiagonals(C):
+                print(diagonal)
+            print()
             print("standard matrix multiplication: " +
+                  str(std) + " microseconds")
+
+            start = int(round(time.time() * 100000))
+            D = strassen(A, B, cross)
+            end = int(round(time.time() * 100000))
+            for diagonal in findDiagonals(D):
+                print(diagonal)
+            print()
+            print("strassen's multiplication: " +
                   str(end - start) + " microseconds")
-            # start = int(round(time.time() * 100000))
-            # strassen(A, B)
-            # end = int(round(time.time() * 100000))
-            # print("strassen method multiplication: " +
-            #       str(end - start) + " microseconds")
+            strassenTime = end - start
+
+            if ft == True:
+                A = createAdjMatrix(p)
+                n_triangles = findTriangles(A)
+                print("number of triangles, matrix of size " + str(const) +
+                      " with p = " + str(p) + ": " + str(n_triangles))
+
+            if optimize == True:
+                for j in range(trials):
+                    min = (2, float('inf'))
+                    for k in range(30):
+                        start = int(round(time.time() * 100000))
+                        D = strassen(A, B, k + 50)
+                        end = int(round(time.time() * 100000))
+                        if (end - start) < min[1]:
+                            min = (k + 50, end - start)
+                    print("optimized strassen's (cross = " +
+                          str(min[0]) + "): " + str(min[1]) + " microseconds")
+            else:
+                print("strassen's multiplication: " +
+                      str(end - start) + " microseconds")
+                strassenTime = end - start
