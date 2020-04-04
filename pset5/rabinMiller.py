@@ -2,15 +2,18 @@
 
 import random
 
+# returns (a^b) mod n
+
 
 def modExponent(a, b, n):
     result = 1
     a = a % n
+    if (a == 0):
+        return 0
     while (b > 0):
-        if (b % 2 == 1):
+        if (b & 1 == 1):
             result = (result * a) % n
-            b -= 1
-        b /= 2
+        b = b >> 1
         a = (a * a) % n
     return result
 
@@ -19,6 +22,7 @@ def modExponent(a, b, n):
 
 def rabinMiller(n, u):
     a = random.randint(2, n-2)
+    # a = 2
     print("a: " + str(a))
 
     b = modExponent(a, u, n)
@@ -48,17 +52,21 @@ def rabinMiller(n, u):
     return a
 
 
-n = 294409
-print(n)
+n = 636127
+print("n: " + str(n))
 u = n - 1
+print("u: " + str(u))
+yeeee = False
+
 while (u % 2 == 0):
-    u /= 2
+    u = int(u/2)
 print("u: " + str(u))
 
 for i in range(25):
     witness = rabinMiller(n, u)
     if (witness != 0):
         print("composite with witness: " + str(witness))
+        yeeee = True
         break
-
-print("prime!")
+if (yeeee == False):
+    print("prime!")
